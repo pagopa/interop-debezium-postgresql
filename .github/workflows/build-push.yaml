@@ -1,0 +1,53 @@
+name: "Build & Push"
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build_push_image:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.IAM_ROLE_ARN }}
+          role-session-name: interop-debezium-postgresql-${{ github.run_number }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/debezium-postgresql
+          flavor: |
+            latest=true
+            prefix=
+            suffix=
+          tags: |
+            type=ref,event=tag
+
+      - name: Build and push Docker image
+        id: build_push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
