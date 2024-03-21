@@ -16,10 +16,6 @@ RUN chown kafka:kafka ./aws-msk-iam-auth-2.0.3-all.jar && chmod 444 ./aws-msk-ia
 RUN curl -LO https://github.com/aws-samples/msk-config-providers/releases/download/r0.2.0/msk-config-providers-0.2.0-all.jar
 RUN chown kafka:kafka ./msk-config-providers-0.2.0-all.jar && chmod 444 ./msk-config-providers-0.2.0-all.jar
 
-WORKDIR /opt/ssl/
-RUN cp /usr/lib/jvm/java-11-openjdk-11.0.20.0.8-1.fc37.x86_64/lib/security/cacerts ./kafka.client.truststore.jks
-RUN chown kafka:kafka ./kafka.client.truststore.jks && chmod 400 ./kafka.client.truststore.jks
-
 WORKDIR /
 COPY ./register-connector.sh .
 RUN chown kafka:kafka ./register-connector.sh && chmod 544 ./register-connector.sh
