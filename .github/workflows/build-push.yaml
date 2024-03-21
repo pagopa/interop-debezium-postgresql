@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'main'
+    tags:
+      - '*'
 
 jobs:
   build_push_image:
@@ -30,13 +32,27 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: (latest) Docker metadata
+        id: meta_latest
+        if: ${{ github.ref_type == 'branch' }}
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/debezium-postgresql
+          images: ${{ steps.login-ecr.outputs.registry }}/interop-debezium-postgresql
           flavor: |
-            latest=true
+            latest=false
+            prefix=
+            suffix=
+          tags: |
+            type=raw,value=latest
+
+      - name: (tag) Docker metadata
+        id: meta_tag
+        if: ${{ github.ref_type == 'tag' }}
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/interop-debezium-postgresql
+          flavor: |
+            latest=false
             prefix=
             suffix=
           tags: |
@@ -49,5 +65,5 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ github.ref_type == 'branch' && steps.meta_latest.outputs.tags || steps.meta_tag.outputs.tags }}
+          labels: ${{ github.ref_type == 'branch' && steps.meta_latest.outputs.labels || steps.meta_tag.outputs.labels }}
