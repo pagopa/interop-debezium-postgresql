@@ -26,6 +26,9 @@ RUN chmod 544 ./wrapper-entrypoint.sh
 COPY ./liveness.sh .
 RUN chmod 544 ./liveness.sh
 
+COPY ./readiness.sh .
+RUN chmod 544 ./readiness.sh
+
 WORKDIR /kafka
 USER kafka
 
