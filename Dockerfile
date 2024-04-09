@@ -19,6 +19,7 @@ RUN chown kafka:kafka ./msk-config-providers-0.2.0-all.jar && chmod 444 ./msk-co
 WORKDIR /
 COPY ./register-connector.sh .
 RUN chown kafka:kafka ./register-connector.sh && chmod 544 ./register-connector.sh
+RUN mkdir /etc/debezium && chown kafka:kafka /etc/debezium/
 
 COPY ./wrapper-entrypoint.sh .
 RUN chmod 544 ./wrapper-entrypoint.sh
