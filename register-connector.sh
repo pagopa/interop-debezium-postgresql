@@ -3,7 +3,7 @@
 set -euo pipefail
 
 CONNECTOR_NAME="$(jq -r '.name' $CONNECTOR_CONFIG_PATH)"
-BASE_URL="http://localhost:8083/connectors/"
+BASE_URL="http://localhost:8083/connectors"
 STATUS_URL="$BASE_URL/$CONNECTOR_NAME/status"
 CONFIG_URL="$BASE_URL/$CONNECTOR_NAME/config"
 CURRENT_IP="$(ip -4 -br addr show eth0 | awk '{print $3}' | sed -E 's/\/[0-9]+//')"
