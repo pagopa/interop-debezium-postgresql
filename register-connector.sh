@@ -59,8 +59,8 @@ function check_connector_worker() {
 function upsert_connector() {
   local body_path="$1"
 
-  local upsert_response=$(curl -s -w "\n%{http_code}\n" 
-                    -X PUT -H "Accept:application/json" -H "Content-Type:application/json" 
+  local upsert_response=$(curl -s -w "\n%{http_code}\n" \
+                    -X PUT -H "Accept:application/json" -H "Content-Type:application/json" \
                     -d "@$body_path" "$CONFIG_URL")
 
   echo "$upsert_response"
