@@ -109,5 +109,5 @@ wait_for_kafka_connect
 log_info "Checking connector worker..."
 check_connector_worker
 
-log_info "Registering connector $UNWRAPPED_CONNECTOR_CONFIG_PATH..."
+log_info "Registering connector $CONNECTOR_CONFIG_PATH..."
 upsert_connector
