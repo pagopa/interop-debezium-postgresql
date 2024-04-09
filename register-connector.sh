@@ -57,9 +57,9 @@ function check_connector_worker() {
 }
 
 function upsert_connector() {
-  body_path="$1"
+  local body_path="$1"
 
-  upsert_response=$(curl -s -w "\n%{http_code}\n" 
+  local upsert_response=$(curl -s -w "\n%{http_code}\n" 
                     -X PUT -H "Accept:application/json" -H "Content-Type:application/json" 
                     -d "@$body_path" "$CONFIG_URL")
 
@@ -70,8 +70,8 @@ function register_connector() {
   UNWRAPPED_CONNECTOR_CONFIG_PATH="${CONNECTOR_CONFIG_PATH%.json}-unwrapped.json"
   jq '.config' "$CONNECTOR_CONFIG_PATH" > "$UNWRAPPED_CONNECTOR_CONFIG_PATH"
 
-  upsert_response="$(upsert_connector "$UNWRAPPED_CONNECTOR_CONFIG_PATH")"
-  upsert_status_code="$(tail -n1 <<< "$upsert_response")"
+  local upsert_response="$(upsert_connector "$UNWRAPPED_CONNECTOR_CONFIG_PATH")"
+  local upsert_status_code="$(tail -n1 <<< "$upsert_response")"
 
   REBALANCE_TIMEOUT_SEC=60
   start_time="$(date -u +%s)"
@@ -110,4 +110,4 @@ log_info "Checking connector worker..."
 check_connector_worker
 
 log_info "Registering connector $CONNECTOR_CONFIG_PATH..."
-upsert_connector
+register_connector
