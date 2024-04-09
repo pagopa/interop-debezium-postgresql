@@ -8,6 +8,21 @@ STATUS_URL="$BASE_URL/$CONNECTOR_NAME/status"
 CONFIG_URL="$BASE_URL/$CONNECTOR_NAME/config"
 CURRENT_IP="$(ip -4 -br addr show eth0 | awk '{print $3}' | sed -E 's/\/[0-9]+//')"
 
+function log_info() {
+  local message="$1"
+  local ts="$(date +'%Y-%m-%d %H:%M:%S,%3N')"
+
+  echo "${ts} INFO    || [register-connector.sh] ${message}"
+}
+
+function log_error() {
+  local message="$1"
+  local ts="$(date +'%Y-%m-%d %H:%M:%S,%3N')"
+
+  echo "${ts} ERROR    || [register-connector.sh] ${message}" >&2
+}
+
+
 function wait_for_kafka_connect() {
   TIMEOUT_SEC=120
   start_time="$(date -u +%s)"
@@ -17,7 +32,7 @@ function wait_for_kafka_connect() {
     elapsed_seconds=$(($current_time-$start_time))
 
     if [ $elapsed_seconds -gt $TIMEOUT_SEC ]; then
-      echo "Timeout while waiting for Kafka Connect startup" >&2
+      log_error "Timeout while waiting for Kafka Connect startup"
       exit 1
     fi
 
@@ -35,7 +50,7 @@ function check_connector_worker() {
 
     # this worker will be idle
     if [ ! "$CURRENT_IP" = "$connector_worker_ip" ]; then 
-      echo "The connector task has already been assigned to another worker."
+      log_info "The connector task has already been assigned to another worker."
       exit 0
     fi
   fi
@@ -62,14 +77,14 @@ function register_connector() {
   start_time="$(date -u +%s)"
 
   while [[ "$upsert_status_code" = "409" ]]; do
-    echo "Connector task rebalancing in progress, retrying..."
+    log_info "Connector task rebalancing in progress, retrying..."
     sleep 2
 
     current_time="$(date -u +%s)"
     elapsed_seconds=$(($current_time-$start_time))
 
     if [ $elapsed_seconds -gt $REBALANCE_TIMEOUT_SEC ]; then
-      echo "Timeout while waiting for connector task rebalance." >&2
+      log_error "Timeout while waiting for connector task rebalance."
       exit 1
     fi
 
@@ -79,20 +94,20 @@ function register_connector() {
 
   
   if [ "$upsert_status_code" -eq "201" ]; then
-    echo "Connector registered successfully."
+    log_info "Connector registered successfully."
   elif [ "$upsert_status_code" -eq "200" ]; then
-    echo "Connector was already registered. Configuration updated."
+    log_info "Connector was already registered. Configuration updated."
   else
-    echo "Error response while registering connector:\n${upsert_response}\n"
+    log_error "Error response while registering connector:\n${upsert_response}\n"
     exit 1
   fi
 }
 
-echo "Waiting for Kafka Connect startup..."
+log_info "Waiting for Kafka Connect startup..."
 wait_for_kafka_connect
 
-echo "Checking connector worker..."
+log_info "Checking connector worker..."
 check_connector_worker
 
-echo "Registering connector $UNWRAPPED_CONNECTOR_CONFIG_PATH..."
+log_info "Registering connector $UNWRAPPED_CONNECTOR_CONFIG_PATH..."
 upsert_connector
