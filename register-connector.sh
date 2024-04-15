@@ -45,6 +45,8 @@ function check_connector_worker() {
   connector_status_code="$(tail -n1 <<< "$connector_status_response")"
   connector_status_body="$(sed '$ d' <<< "$connector_status_response")"
 
+  log_info "Connector status: $connector_status_response"
+
   if [ "$connector_status_code" -eq "200" ]; then
     connector_worker_ip="$(echo "$connector_status_body" | jq -r '.connector.worker_id' | sed -e 's/:.*$//')"
 
