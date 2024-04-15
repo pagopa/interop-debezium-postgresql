@@ -29,7 +29,7 @@ function check_connector_worker() {
   fi
 
   # this worker is idle
-  [ ! "$CURRENT_IP" = "$connector_worker_ip" ] && exit 0
+  if [ ! "$CURRENT_IP" = "$connector_worker_ip" ]; then exit 0; fi;
 }
 
 function check_connector_state() {
