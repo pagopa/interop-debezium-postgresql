@@ -46,7 +46,9 @@ function check_connector_worker() {
   connector_status_body="$(sed '$ d' <<< "$connector_status_response")"
 
   if [ "$connector_status_code" -eq "200" ]; then
-    connector_worker_ip="$(echo "$connector_status_body" | jq -r '.connector.worker_id')"
+    connector_worker_ip="$(echo "$connector_status_body" | jq -r '.connector.worker_id' | sed -e 's/:.*$//')"
+
+    log_info "Current IP: $CURRENT_IP, assigned worker IP: $connector_worker_ip"
 
     # this worker will be idle
     if [ ! "$CURRENT_IP" = "$connector_worker_ip" ]; then 

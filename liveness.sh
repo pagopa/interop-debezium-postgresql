@@ -21,7 +21,7 @@ function check_connector_worker() {
   connector_status_response="$(curl -s -w "\n%{http_code}\n" -H "Accept:application/json" "$STATUS_URL")"
   connector_status_code="$(tail -n1 <<< "$connector_status_response")"
   connector_status_body="$(sed '$ d' <<< "$connector_status_response")"
-  connector_worker_ip="$(echo "$connector_status_body" | jq -r '.connector.worker_id')"
+  connector_worker_ip="$(echo "$connector_status_body" | jq -r '.connector.worker_id' | sed -e 's/:.*$//')"
 
   if [ ! "$connector_status_code" -eq "200" ]; then
     echo "Error while checking connector status:\n${connector_status_body}\n" >&2
