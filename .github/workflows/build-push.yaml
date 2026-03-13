@@ -35,6 +35,7 @@ jobs:
           name: docker-image
           path: /tmp/image.tar
           retention-days: 1
+          compression-level: 0
 
   push:
     name: Push (dev)
