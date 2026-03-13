@@ -99,4 +99,4 @@ jobs:
         with:
           aws_region: ${{ vars.AWS_REGION }}
           iam_role_arn: ${{ vars.IAM_ROLE_ARN }}
-          repository: debezium-postgresql
+          repository: knodia-infra-debezium-postgresql
