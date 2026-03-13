@@ -8,15 +8,54 @@ on:
       - '*'
 
 jobs:
-  build_push_image:
-    name: Build & Push
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: interop-debezium-postgresql:build
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: docker-image
+          path: /tmp/image.tar
+          retention-days: 1
+
+  push:
+    name: Push (dev)
+    needs: build
     runs-on: ubuntu-latest
     environment: dev
     permissions:
       contents: read
       id-token: write
-    strategy:
-      fail-fast: false
+    steps:
+      - name: Push to ECR
+        uses: ./.github/actions/push
+        with:
+          aws_region: ${{ vars.AWS_REGION }}
+          iam_role_arn: ${{ vars.IAM_ROLE_ARN }}
+          repository: interop-debezium-postgresql
+
+  knodia_terraform:
+    name: Terraform Apply (knodia-dev)
+    runs-on: ubuntu-latest
+    environment: knodia-dev
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
@@ -26,44 +65,38 @@ jobs:
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.IAM_ROLE_ARN }}
-          role-session-name: interop-debezium-postgresql-${{ github.run_number }}
+          role-session-name: interop-debezium-postgresql-tf-${{ github.run_number }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
+      - name: Read terraform version
+        working-directory: terraform/
+        run: |
+          echo "TERRAFORM_VERSION=$(cat ./.terraform-version)" >> $GITHUB_ENV
 
-      - name: (latest) Docker metadata
-        id: meta_latest
-        if: ${{ github.ref_type == 'branch' }}
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/interop-debezium-postgresql
-          flavor: |
-            latest=false
-            prefix=
-            suffix=
-          tags: |
-            type=raw,value=latest
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: (tag) Docker metadata
-        id: meta_tag
-        if: ${{ github.ref_type == 'tag' }}
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ steps.login-ecr.outputs.registry }}/interop-debezium-postgresql
-          flavor: |
-            latest=false
-            prefix=
-            suffix=
-          tags: |
-            type=ref,event=tag
+      - name: Terraform Apply
+        working-directory: terraform/
+        env:
+          ENV: dev
+        run: |
+          terraform fmt -check -recursive
+          ./terraform.sh apply "$ENV" -auto-approve
 
-      - name: Build and push Docker image
-        id: build_push
-        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+  knodia_push:
+    name: Push (knodia-dev)
+    needs: [build, knodia_terraform]
+    runs-on: ubuntu-latest
+    environment: knodia-dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Push to ECR
+        uses: ./.github/actions/push
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ github.ref_type == 'branch' && steps.meta_latest.outputs.tags || steps.meta_tag.outputs.tags }}
-          labels: ${{ github.ref_type == 'branch' && steps.meta_latest.outputs.labels || steps.meta_tag.outputs.labels }}
+          aws_region: ${{ vars.AWS_REGION }}
+          iam_role_arn: ${{ vars.IAM_ROLE_ARN }}
+          repository: debezium-postgresql
