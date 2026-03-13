@@ -1,5 +1,5 @@
 locals {
-  repository_name = "debezium-postgresql"
+  repository_name = "knodia-infra-debezium-postgresql"
 }
 
 resource "aws_ecr_repository" "this" {
