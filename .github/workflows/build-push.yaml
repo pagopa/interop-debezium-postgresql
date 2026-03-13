@@ -17,6 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
       - name: Build Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
