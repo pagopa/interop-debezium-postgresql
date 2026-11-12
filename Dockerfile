@@ -1,4 +1,4 @@
-FROM quay.io/debezium/connect:3.4.2.Final@sha256:4949028f3797c35b4ea3b8bbe7960811ca7597ddf27a0b3f2d8d3d33106d09e5
+FROM quay.io/debezium/connect:3.7.1.Final@sha256:05fcb3ca2160820450b83d06bedca444102f393568495feb329a75252eccee5f
 
 USER root
 
